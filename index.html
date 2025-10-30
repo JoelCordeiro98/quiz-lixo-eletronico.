@@ -112,8 +112,8 @@ const soundWrong=document.getElementById("sound-wrong");
 const soundClick=document.getElementById("sound-click");
 const soundTick=document.getElementById("sound-tick");
 
-// 🔗 URL ATUALIZADA DO GOOGLE APPS SCRIPT
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwkIpV-5rhB1zVDqkXA0VODVbBZpAg0z5aq-pocGlSx2QMPoyEDfiyAAOeIGkjBZWsA6Q/exec';
+// 🔗 URL DO GOOGLE APPS SCRIPT
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxH1bpUOBxEU0r7pQ5WwsnTUtsOu2lkceIapiz50yo6WnxXdMJP8hvQmPW1abFyh9Org/exec';
 
 // Função para garantir que os sons carreguem
 function carregarSons() {
@@ -219,37 +219,78 @@ function nextQuestion(){
   });
 }
 
-// 📊 FUNÇÃO SIMPLIFICADA PARA SALVAR NO GOOGLE SHEETS
+// 📊 FUNÇÃO REVISADA PARA SALVAR NO GOOGLE SHEETS
 async function salvarResultadoGoogleSheets(dados) {
     try {
-        console.log('📤 Enviando dados:', dados);
+        console.log('📤 Enviando dados para o Google Sheets:', dados);
         
+        // Formata os dados de forma mais simples
         const dadosFormatados = {
             nome: dados.nome || '',
             idade: dados.idade || 0,
             pontuacao: dados.pontuacao || 0,
             totalQuestoes: dados.totalQuestoes || 0,
             percentual: dados.percentual || '0%',
-            tempoRestante: dados.tempoRestante || 0
+            tempoRestante: dados.tempoRestante || 0,
+            data: new Date().toLocaleString('pt-BR')
         };
         
         console.log('📝 Dados formatados:', dadosFormatados);
         
+        // Usando FormData para evitar problemas de CORS
+        const formData = new FormData();
+        formData.append('dados', JSON.stringify(dadosFormatados));
+        
         const response = await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(dadosFormatados)
+            body: formData
         });
         
-        const result = await response.json();
-        console.log('✅ Resposta completa:', result);
+        console.log('📨 Resposta do servidor:', response);
         
-        return result;
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const result = await response.text();
+        console.log('✅ Resposta do Google Sheets:', result);
+        
+        return {success: true, data: result};
         
     } catch (error) {
-        console.error('❌ Erro ao salvar:', error);
+        console.error('❌ Erro ao salvar dados:', error);
+        return {success: false, error: error.message};
+    }
+}
+
+// 🆕 Função alternativa usando URL parameters
+async function salvarResultadoAlternativo(dados) {
+    try {
+        console.log('🔄 Tentando método alternativo...');
+        
+        const params = new URLSearchParams({
+            nome: dados.nome || '',
+            idade: dados.idade || 0,
+            pontuacao: dados.pontuacao || 0,
+            totalQuestoes: dados.totalQuestoes || 0,
+            percentual: dados.percentual || '0%',
+            tempoRestante: dados.tempoRestante || 0,
+            data: new Date().toLocaleString('pt-BR')
+        });
+        
+        const urlComParams = `${GOOGLE_SCRIPT_URL}?${params.toString()}`;
+        console.log('🔗 URL com parâmetros:', urlComParams);
+        
+        const response = await fetch(urlComParams, {
+            method: 'GET',
+            mode: 'no-cors'
+        });
+        
+        console.log('📨 Resposta do método alternativo:', response);
+        return {success: true, method: 'alternative'};
+        
+    } catch (error) {
+        console.error('❌ Erro no método alternativo:', error);
         return {success: false, error: error.message};
     }
 }
@@ -285,7 +326,7 @@ function finishQuiz(){
   successMessage.style.display = "none";
   errorMessage.style.display = "none";
   
-  // Envia para o Google Sheets
+  // Tenta salvar no Google Sheets
   salvarResultadoGoogleSheets(dadosQuiz)
       .then(result => {
           loadingMessage.style.display = "none";
@@ -293,8 +334,21 @@ function finishQuiz(){
               successMessage.style.display = "block";
               console.log("✅ Dados salvos com sucesso!");
           } else {
-              errorMessage.style.display = "block";
-              console.log("❌ Erro ao salvar:", result.error);
+              console.log("🔄 Tentando método alternativo...");
+              // Se o primeiro método falhar, tenta o alternativo
+              return salvarResultadoAlternativo(dadosQuiz);
+          }
+      })
+      .then(altResult => {
+          if (altResult) {
+              loadingMessage.style.display = "none";
+              if (altResult.success) {
+                  successMessage.style.display = "block";
+                  console.log("✅ Dados salvos com método alternativo!");
+              } else {
+                  errorMessage.style.display = "block";
+                  console.log("❌ Ambos os métodos falharam:", altResult.error);
+              }
           }
       })
       .catch(error => {
@@ -312,6 +366,28 @@ document.getElementById("restartBtn").addEventListener("click", ()=>{
   document.getElementById("quiz-screen").style.display="block";
   fadeIn(document.getElementById("quiz-screen"));
   showQuestion();
+});
+
+// 🆕 Teste da conexão com o Google Apps Script
+function testarConexao() {
+    console.log('🧪 Testando conexão com Google Apps Script...');
+    fetch(GOOGLE_SCRIPT_URL)
+        .then(response => {
+            console.log('🔗 Status da conexão:', response.status);
+            console.log('🔗 Response:', response);
+            return response.text();
+        })
+        .then(text => {
+            console.log('🔗 Conteúdo da resposta:', text);
+        })
+        .catch(error => {
+            console.error('🔗 Erro na conexão:', error);
+        });
+}
+
+// Testa a conexão quando a página carrega
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(testarConexao, 2000);
 });
 </script>
 </body>
