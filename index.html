@@ -1,11 +1,193 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Quiz em Construção</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧠 Quiz: Descarte Consciente do Lixo Eletrônico</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<style>
+body {
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  background: url('https://cdn.pixabay.com/photo/2018/01/13/21/49/electronic-waste-3085957_1280.jpg') no-repeat center center fixed;
+  background-size: cover;
+  margin:0; padding:0; overflow:hidden;
+}
+.overlay {
+  background-color: rgba(0,0,0,0.5);
+  position: fixed; top:0; left:0; right:0; bottom:0; z-index:0;
+}
+.container {
+  position: relative; z-index:1;
+  max-width: 700px; margin:60px auto;
+  background: rgba(255,255,255,0.9);
+  border-radius: 20px; padding: 30px;
+  box-shadow:0 0 20px rgba(0,0,0,0.3);
+  text-align: center; transition: all 0.5s ease;
+  opacity:0; transform: translateY(20px);
+}
+.fade-in { opacity:1 !important; transform: translateY(0) !important; }
+h1 { color:#2e7d32; }
+button {
+  background:#2e7d32; color:white; border:none;
+  padding:12px 25px; border-radius:8px; font-size:16px; cursor:pointer; transition:0.3s;
+}
+button:hover { background:#1b5e20; }
+#qrcode { margin:15px auto; display:block; }
+input[type="text"], input[type="number"] {
+  width:100%; padding:10px; border-radius:8px;
+  border:1px solid #ccc; margin-bottom:10px; font-size:16px;
+}
+.question-text { font-size:20px; color:#1b5e20; margin-bottom:20px; }
+.option {
+  background: rgba(46,125,50,0.1);
+  border:1px solid #a5d6a7; border-radius:25px;
+  padding:12px 15px; margin:12px 0; cursor:pointer;
+  transition: all 0.3s ease;
+}
+.option:hover { background: rgba(76,175,80,0.2); transform: scale(1.02); }
+.correct { background-color:#c8e6c9 !important; border-color:#2e7d32; }
+.wrong { background-color:#ffcdd2 !important; border-color:#c62828; }
+#timer-bar { width:100%; height:12px; background-color:#a5d6a7; border-radius:6px; overflow:hidden; margin-bottom:10px; }
+#timer-fill { height:100%; background-color:#2e7d32; width:100%; transition: width 1s linear; }
+#result { font-weight:bold; font-size:22px; color:#2e7d32; margin-top:20px; }
+</style>
 </head>
 <body>
-  <h1>Quiz do Lixo Eletrônico</h1>
-  <p>Em breve o quiz interativo estará aqui!</p>
+<div class="overlay"></div>
+
+<div class="container" id="start-screen">
+<h1>🧠 Quiz: Descarte Consciente do Lixo Eletrônico</h1>
+<canvas id="qrcode" width="180" height="180"></canvas>
+<p>📱 Escaneie o QR Code para acessar em outro dispositivo!</p>
+<form id="userForm">
+<label><b>Nome:</b></label>
+<input type="text" id="nome" required>
+<label><b>Idade:</b></label>
+<input type="number" id="idade" required>
+<button type="submit">Começar Quiz</button>
+</form>
+</div>
+
+<div class="container" id="quiz-screen" style="display:none;">
+<div id="timer-bar"><div id="timer-fill"></div></div>
+<div id="timer" style="font-size:18px; color:#1b5e20;">Tempo: 20s</div>
+<div id="question-container"></div>
+</div>
+
+<div class="container" id="result-screen" style="display:none;">
+<h2>Resultado Final</h2>
+<p id="result"></p>
+<button id="restartBtn">Reiniciar Quiz</button>
+</div>
+
+<audio id="sound-correct" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+<audio id="sound-wrong" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+<audio id="sound-click" src="https://actions.google.com/sounds/v1/cartoon/wood_tap.ogg"></audio>
+<audio id="sound-tick" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+
+<script>
+const quizData=[
+{q:"O que é considerado lixo eletrônico (e-lixo)?", a:["Apenas pilhas e baterias","Qualquer tipo de lixo produzido em casa","Equipamentos eletrônicos e elétricos que se tornaram obsoletos ou quebrados","Apenas celulares e computadores"], c:2},
+{q:"Qual é o principal risco do descarte incorreto do lixo eletrônico?", a:["Aumentar o consumo de energia elétrica","Contaminação do solo, da água e do ar","Reduzir a produção de novos produtos","Dificultar o transporte de resíduos"], c:1},
+{q:"Quais substâncias perigosas podem estar presentes no e-lixo?", a:["Cálcio, Ferro e Zinco","Alumínio, Ouro e Prata","Chumbo, Mercúrio e Cádmio","Cobre, Lítio e Carbono"], c:2},
+{q:"Qual é a consequência da perda de materiais valiosos no descarte incorreto?", a:["Aumento do desemprego","Desperdício de recursos que poderiam ser reciclados","Maior produção de lixo doméstico","Diminuição da coleta seletiva"], c:1},
+{q:"O que representam os 3 R’s da sustentabilidade?", a:["Reutilizar, Recarregar e Reparar","Reduzir, Reutilizar e Reciclar","Recolher, Recuperar e Reaproveitar","Reestruturar, Redefinir e Reaplicar"], c:1},
+{q:"O que a 'logística reversa' determina por lei?", a:["Que apenas consumidores sejam responsáveis pelo descarte","Que as empresas devem receber de volta produtos usados para descarte correto","Que o lixo eletrônico seja misturado ao lixo comum","Que os pontos de coleta sejam criados apenas em escolas"], c:1},
+{q:"O que deve ser feito antes de descartar um celular ou computador?", a:["Quebrar o aparelho para evitar reutilização","Guardar as peças úteis","Apagar todos os dados pessoais e fazer backup","Jogar apenas a bateria no lixo comum"], c:2},
+{q:"Qual é uma função da Inteligência Artificial no processo de reciclagem?", a:["Aumentar o tempo de decomposição dos materiais","Separar materiais de forma automática e precisa","Substituir os pontos de coleta por aplicativos","Reduzir a produção de lixo eletrônico"], c:1},
+{q:"Como a IA ajuda na coleta de lixo eletrônico?", a:["Criando robôs que fazem o descarte","Controlando o peso dos resíduos","Otimizando rotas para reduzir custos e emissões de carbono","Coletando lixo eletrônico apenas em áreas industriais"], c:2},
+{q:"Qual é o grande objetivo da união entre IA e descarte consciente?", a:["Substituir o trabalho humano na coleta","Criar novos tipos de lixo eletrônico","Tornar o processo de reciclagem mais sustentável, eficiente e preciso","Aumentar o consumo de produtos eletrônicos"], c:2}
+];
+
+let current=0, correct=0, timer, timeLeft=20;
+const soundCorrect=document.getElementById("sound-correct");
+const soundWrong=document.getElementById("sound-wrong");
+const soundClick=document.getElementById("sound-click");
+const soundTick=document.getElementById("sound-tick");
+
+function fadeIn(el){ el.style.display="block"; setTimeout(()=>el.classList.add("fade-in"),50);}
+function fadeOut(el,callback){ el.classList.remove("fade-in"); setTimeout(()=>{el.style.display="none"; if(callback) callback();},500); }
+
+document.addEventListener("DOMContentLoaded",()=>{
+  new QRious({element:document.getElementById("qrcode"),
+              value:"https://joelcordeiro98.github.io/quiz-lixo-eletronico/",
+              size:180});
+  fadeIn(document.getElementById("start-screen"));
+});
+
+document.getElementById("userForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  fadeOut(document.getElementById("start-screen"),()=>{
+    document.getElementById("quiz-screen").style.display="block";
+    fadeIn(document.getElementById("quiz-screen"));
+    showQuestion();
+  });
+});
+
+function showQuestion(){
+  const q=quizData[current];
+  const container=document.getElementById("question-container");
+  container.innerHTML=`<div class='question-text'><b>${current+1}. ${q.q}</b></div>`+
+    q.a.map((opt,i)=>`<div class='option' onclick='checkAnswer(${i})'>${opt}</div>`).join("");
+  fadeIn(container);
+  resetTimer();
+}
+
+function resetTimer(){
+  clearInterval(timer);
+  timeLeft=20;
+  document.getElementById("timer").innerText="Tempo: 20s";
+  document.getElementById("timer-fill").style.width="100%";
+  timer=setInterval(()=>{
+    timeLeft--;
+    document.getElementById("timer").innerText="Tempo: "+timeLeft+"s";
+    document.getElementById("timer-fill").style.width=(timeLeft*5)+"%";
+    if(timeLeft<=3 && timeLeft>0) soundTick.play();
+    if(timeLeft<=0){ clearInterval(timer); markAnswer(null); }
+  },1000);
+}
+
+function checkAnswer(index){
+  soundClick.play(); clearInterval(timer); markAnswer(index);
+}
+
+function markAnswer(index){
+  const q=quizData[current];
+  const options=document.querySelectorAll(".option");
+  options.forEach((opt,i)=>{
+    if(i===q.c) opt.classList.add("correct");
+    if(index!==null && i===index && i!==q.c) opt.classList.add("wrong");
+    opt.style.pointerEvents="none";
+  });
+  if(index===q.c) soundCorrect.play(), correct++;
+  else if(index!==null) soundWrong.play();
+  setTimeout(nextQuestion,1200);
+}
+
+function nextQuestion(){
+  fadeOut(document.getElementById("quiz-screen"),()=>{
+    current++;
+    if(current<quizData.length) showQuestion();
+    else finishQuiz();
+    if(current<quizData.length) fadeIn(document.getElementById("quiz-screen"));
+  });
+}
+
+function finishQuiz(){
+  document.getElementById("quiz-screen").style.display="none";
+  document.getElementById("result-screen").style.display="block";
+  fadeIn(document.getElementById("result-screen"));
+  const percent=((correct/quizData.length)*100).toFixed(1);
+  document.getElementById("result").innerText=`Você acertou ${correct} de ${quizData.length} questões (${percent}%).`;
+}
+
+document.getElementById("restartBtn").addEventListener("click", ()=>{
+  current=0; correct=0;
+  document.getElementById("result-screen").style.display="none";
+  document.getElementById("quiz-screen").style.display="block";
+  fadeIn(document.getElementById("quiz-screen"));
+  showQuestion();
+});
+</script>
 </body>
 </html>
