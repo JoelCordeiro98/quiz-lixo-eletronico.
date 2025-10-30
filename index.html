@@ -52,6 +52,7 @@ input[type="text"], input[type="number"] {
 #result { font-weight:bold; font-size:22px; color:#2e7d32; margin-top:20px; }
 .loading { color: #2e7d32; font-style: italic; }
 .success { color: #2e7d32; font-weight: bold; }
+.error { color: #c62828; font-style: italic; }
 </style>
 </head>
 <body>
@@ -81,6 +82,7 @@ input[type="text"], input[type="number"] {
 <p id="result"></p>
 <p id="loading-message" class="loading" style="display:none;">📊 Salvando resultado na planilha...</p>
 <p id="success-message" class="success" style="display:none;">✅ Dados salvos com sucesso!</p>
+<p id="error-message" class="error" style="display:none;">❌ Erro ao salvar dados, mas o quiz foi finalizado</p>
 <button id="restartBtn">Reiniciar Quiz</button>
 </div>
 
@@ -110,7 +112,7 @@ const soundWrong=document.getElementById("sound-wrong");
 const soundClick=document.getElementById("sound-click");
 const soundTick=document.getElementById("sound-tick");
 
-// 🔗 URL ATUALIZADA DO SEU GOOGLE APPS SCRIPT
+// 🔗 URL DO GOOGLE APPS SCRIPT
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwHaIHLUrcGFtngcqZOtHhBIG_agfv-o7MfUUG85kiLuKJjrxz4DLpkfMGVMRMvT6m1Ng/exec';
 
 // Função para garantir que os sons carreguem
@@ -217,25 +219,79 @@ function nextQuestion(){
   });
 }
 
-// 📊 FUNÇÃO PARA SALVAR NO GOOGLE SHEETS
+// 📊 FUNÇÃO REVISADA PARA SALVAR NO GOOGLE SHEETS
 async function salvarResultadoGoogleSheets(dados) {
     try {
-        console.log('Enviando dados para o Google Sheets:', dados);
+        console.log('📤 Enviando dados para o Google Sheets:', dados);
+        
+        // Formata os dados de forma mais simples
+        const dadosFormatados = {
+            nome: dados.nome || '',
+            idade: dados.idade || 0,
+            pontuacao: dados.pontuacao || 0,
+            totalQuestoes: dados.totalQuestoes || 0,
+            percentual: dados.percentual || '0%',
+            tempoRestante: dados.tempoRestante || 0,
+            data: new Date().toLocaleString('pt-BR')
+        };
+        
+        console.log('📝 Dados formatados:', dadosFormatados);
+        
+        // Usando FormData para evitar problemas de CORS
+        const formData = new FormData();
+        formData.append('dados', JSON.stringify(dadosFormatados));
         
         const response = await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(dados)
+            body: formData
         });
         
-        const result = await response.json();
-        console.log('Resposta do Google Sheets:', result);
-        return result;
+        console.log('📨 Resposta do servidor:', response);
+        
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        
+        const result = await response.text();
+        console.log('✅ Resposta do Google Sheets:', result);
+        
+        return {success: true, data: result};
+        
     } catch (error) {
-        console.error('Erro ao salvar dados:', error);
-        return {success: false, error: error.toString()};
+        console.error('❌ Erro ao salvar dados:', error);
+        return {success: false, error: error.message};
+    }
+}
+
+// 🆕 Função alternativa usando URL parameters
+async function salvarResultadoAlternativo(dados) {
+    try {
+        console.log('🔄 Tentando método alternativo...');
+        
+        const params = new URLSearchParams({
+            nome: dados.nome || '',
+            idade: dados.idade || 0,
+            pontuacao: dados.pontuacao || 0,
+            totalQuestoes: dados.totalQuestoes || 0,
+            percentual: dados.percentual || '0%',
+            tempoRestante: dados.tempoRestante || 0,
+            data: new Date().toLocaleString('pt-BR')
+        });
+        
+        const urlComParams = `${GOOGLE_SCRIPT_URL}?${params.toString()}`;
+        console.log('🔗 URL com parâmetros:', urlComParams);
+        
+        const response = await fetch(urlComParams, {
+            method: 'GET',
+            mode: 'no-cors'
+        });
+        
+        console.log('📨 Resposta do método alternativo:', response);
+        return {success: true, method: 'alternative'};
+        
+    } catch (error) {
+        console.error('❌ Erro no método alternativo:', error);
+        return {success: false, error: error.message};
     }
 }
 
@@ -256,7 +312,7 @@ function finishQuiz(){
       idade: parseInt(idade),
       pontuacao: correct,
       totalQuestoes: quizData.length,
-      percentual: percent,
+      percentual: percent + '%',
       tempoRestante: timeLeft,
       timestamp: new Date().toISOString()
   };
@@ -264,9 +320,13 @@ function finishQuiz(){
   // Mostra mensagem de carregamento
   const loadingMessage = document.getElementById("loading-message");
   const successMessage = document.getElementById("success-message");
-  loadingMessage.style.display = "block";
+  const errorMessage = document.getElementById("error-message");
   
-  // Envia para o Google Sheets
+  loadingMessage.style.display = "block";
+  successMessage.style.display = "none";
+  errorMessage.style.display = "none";
+  
+  // Tenta salvar no Google Sheets
   salvarResultadoGoogleSheets(dadosQuiz)
       .then(result => {
           loadingMessage.style.display = "none";
@@ -274,17 +334,27 @@ function finishQuiz(){
               successMessage.style.display = "block";
               console.log("✅ Dados salvos com sucesso!");
           } else {
-              console.log("⚠️ Dados não foram salvos:", result.error);
-              // Mostra mensagem de erro discreta
-              successMessage.innerText = "✅ Quiz finalizado! (Dados podem não ter sido salvos)";
-              successMessage.style.display = "block";
+              console.log("🔄 Tentando método alternativo...");
+              // Se o primeiro método falhar, tenta o alternativo
+              return salvarResultadoAlternativo(dadosQuiz);
+          }
+      })
+      .then(altResult => {
+          if (altResult) {
+              loadingMessage.style.display = "none";
+              if (altResult.success) {
+                  successMessage.style.display = "block";
+                  console.log("✅ Dados salvos com método alternativo!");
+              } else {
+                  errorMessage.style.display = "block";
+                  console.log("❌ Ambos os métodos falharam:", altResult.error);
+              }
           }
       })
       .catch(error => {
           loadingMessage.style.display = "none";
-          console.log("⚠️ Erro ao salvar:", error);
-          successMessage.innerText = "✅ Quiz finalizado! (Erro ao salvar dados)";
-          successMessage.style.display = "block";
+          errorMessage.style.display = "block";
+          console.log("❌ Erro geral ao salvar:", error);
       });
 }
 
@@ -292,9 +362,32 @@ document.getElementById("restartBtn").addEventListener("click", ()=>{
   current=0; correct=0;
   document.getElementById("result-screen").style.display="none";
   document.getElementById("success-message").style.display="none";
+  document.getElementById("error-message").style.display="none";
   document.getElementById("quiz-screen").style.display="block";
   fadeIn(document.getElementById("quiz-screen"));
   showQuestion();
+});
+
+// 🆕 Teste da conexão com o Google Apps Script
+function testarConexao() {
+    console.log('🧪 Testando conexão com Google Apps Script...');
+    fetch(GOOGLE_SCRIPT_URL)
+        .then(response => {
+            console.log('🔗 Status da conexão:', response.status);
+            console.log('🔗 Response:', response);
+            return response.text();
+        })
+        .then(text => {
+            console.log('🔗 Conteúdo da resposta:', text);
+        })
+        .catch(error => {
+            console.error('🔗 Erro na conexão:', error);
+        });
+}
+
+// Testa a conexão quando a página carrega
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(testarConexao, 2000);
 });
 </script>
 </body>
