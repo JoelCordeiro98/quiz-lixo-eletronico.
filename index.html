@@ -110,8 +110,8 @@ const soundWrong=document.getElementById("sound-wrong");
 const soundClick=document.getElementById("sound-click");
 const soundTick=document.getElementById("sound-tick");
 
-// 🔗 URL DO SEU GOOGLE APPS SCRIPT
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSi1dPZAvWZ3YfGR-36aibzIHIhCju9_VX2iVXvpLWQQyOgX2O4zdyuDdV1EQxTu2J8w/exec';
+// 🔗 URL ATUALIZADA DO SEU GOOGLE APPS SCRIPT
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwHaIHLUrcGFtngcqZOtHhBIG_agfv-o7MfUUG85kiLuKJjrxz4DLpkfMGVMRMvT6m1Ng/exec';
 
 // Função para garantir que os sons carreguem
 function carregarSons() {
@@ -220,6 +220,8 @@ function nextQuestion(){
 // 📊 FUNÇÃO PARA SALVAR NO GOOGLE SHEETS
 async function salvarResultadoGoogleSheets(dados) {
     try {
+        console.log('Enviando dados para o Google Sheets:', dados);
+        
         const response = await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             headers: {
@@ -229,7 +231,7 @@ async function salvarResultadoGoogleSheets(dados) {
         });
         
         const result = await response.json();
-        console.log('Dados salvos com sucesso:', result);
+        console.log('Resposta do Google Sheets:', result);
         return result;
     } catch (error) {
         console.error('Erro ao salvar dados:', error);
@@ -272,12 +274,17 @@ function finishQuiz(){
               successMessage.style.display = "block";
               console.log("✅ Dados salvos com sucesso!");
           } else {
-              console.log("⚠️ Dados não foram salvos, mas o quiz continua.");
+              console.log("⚠️ Dados não foram salvos:", result.error);
+              // Mostra mensagem de erro discreta
+              successMessage.innerText = "✅ Quiz finalizado! (Dados podem não ter sido salvos)";
+              successMessage.style.display = "block";
           }
       })
       .catch(error => {
           loadingMessage.style.display = "none";
-          console.log("⚠️ Erro ao salvar, mas o quiz foi finalizado.");
+          console.log("⚠️ Erro ao salvar:", error);
+          successMessage.innerText = "✅ Quiz finalizado! (Erro ao salvar dados)";
+          successMessage.style.display = "block";
       });
 }
 
