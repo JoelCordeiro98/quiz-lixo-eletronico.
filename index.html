@@ -50,6 +50,8 @@ input[type="text"], input[type="number"] {
 #timer-bar { width:100%; height:12px; background-color:#a5d6a7; border-radius:6px; overflow:hidden; margin-bottom:10px; }
 #timer-fill { height:100%; background-color:#2e7d32; width:100%; transition: width 1s linear; }
 #result { font-weight:bold; font-size:22px; color:#2e7d32; margin-top:20px; }
+.loading { color: #2e7d32; font-style: italic; }
+.success { color: #2e7d32; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -77,13 +79,16 @@ input[type="text"], input[type="number"] {
 <div class="container" id="result-screen" style="display:none;">
 <h2>Resultado Final</h2>
 <p id="result"></p>
+<p id="loading-message" class="loading" style="display:none;">📊 Salvando resultado na planilha...</p>
+<p id="success-message" class="success" style="display:none;">✅ Dados salvos com sucesso!</p>
 <button id="restartBtn">Reiniciar Quiz</button>
 </div>
 
-<audio id="sound-correct" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
-<audio id="sound-wrong" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
-<audio id="sound-click" src="https://actions.google.com/sounds/v1/cartoon/wood_tap.ogg"></audio>
-<audio id="sound-tick" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+<!-- 🎵 SONS MODERNOS E CURTOS -->
+<audio id="sound-correct" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3"></audio>
+<audio id="sound-wrong" src="https://assets.mixkit.co/sfx/preview/mixkit-warning-alarm-buzzer-2851.mp3"></audio>
+<audio id="sound-click" src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3"></audio>
+<audio id="sound-tick" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-game-interface-407.mp3"></audio>
 
 <script>
 const quizData=[
@@ -91,7 +96,7 @@ const quizData=[
 {q:"Qual é o principal risco do descarte incorreto do lixo eletrônico?", a:["Aumentar o consumo de energia elétrica","Contaminação do solo, da água e do ar","Reduzir a produção de novos produtos","Dificultar o transporte de resíduos"], c:1},
 {q:"Quais substâncias perigosas podem estar presentes no e-lixo?", a:["Cálcio, Ferro e Zinco","Alumínio, Ouro e Prata","Chumbo, Mercúrio e Cádmio","Cobre, Lítio e Carbono"], c:2},
 {q:"Qual é a consequência da perda de materiais valiosos no descarte incorreto?", a:["Aumento do desemprego","Desperdício de recursos que poderiam ser reciclados","Maior produção de lixo doméstico","Diminuição da coleta seletiva"], c:1},
-{q:"O que representam os 3 R’s da sustentabilidade?", a:["Reutilizar, Recarregar e Reparar","Reduzir, Reutilizar e Reciclar","Recolher, Recuperar e Reaproveitar","Reestruturar, Redefinir e Reaplicar"], c:1},
+{q:"O que representam os 3 R's da sustentabilidade?", a:["Reutilizar, Recarregar e Reparar","Reduzir, Reutilizar e Reciclar","Recolher, Recuperar e Reaproveitar","Reestruturar, Redefinir e Reaplicar"], c:1},
 {q:"O que a 'logística reversa' determina por lei?", a:["Que apenas consumidores sejam responsáveis pelo descarte","Que as empresas devem receber de volta produtos usados para descarte correto","Que o lixo eletrônico seja misturado ao lixo comum","Que os pontos de coleta sejam criados apenas em escolas"], c:1},
 {q:"O que deve ser feito antes de descartar um celular ou computador?", a:["Quebrar o aparelho para evitar reutilização","Guardar as peças úteis","Apagar todos os dados pessoais e fazer backup","Jogar apenas a bateria no lixo comum"], c:2},
 {q:"Qual é uma função da Inteligência Artificial no processo de reciclagem?", a:["Aumentar o tempo de decomposição dos materiais","Separar materiais de forma automática e precisa","Substituir os pontos de coleta por aplicativos","Reduzir a produção de lixo eletrônico"], c:1},
@@ -105,14 +110,39 @@ const soundWrong=document.getElementById("sound-wrong");
 const soundClick=document.getElementById("sound-click");
 const soundTick=document.getElementById("sound-tick");
 
+// 🔗 URL DO SEU GOOGLE APPS SCRIPT
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzSi1dPZAvWZ3YfGR-36aibzIHIhCju9_VX2iVXvpLWQQyOgX2O4zdyuDdV1EQxTu2J8w/exec';
+
+// Função para garantir que os sons carreguem
+function carregarSons() {
+    console.log("Carregando sons modernos...");
+    
+    // Pré-carrega os sons
+    soundCorrect.load();
+    soundWrong.load();
+    soundClick.load();
+    soundTick.load();
+    
+    // Configura volume (mais baixo para sons modernos)
+    soundCorrect.volume = 0.4;
+    soundWrong.volume = 0.4;
+    soundClick.volume = 0.3;
+    soundTick.volume = 0.2;
+    
+    console.log("Sons modernos carregados!");
+}
+
 function fadeIn(el){ el.style.display="block"; setTimeout(()=>el.classList.add("fade-in"),50);}
 function fadeOut(el,callback){ el.classList.remove("fade-in"); setTimeout(()=>{el.style.display="none"; if(callback) callback();},500); }
 
 document.addEventListener("DOMContentLoaded",()=>{
   new QRious({element:document.getElementById("qrcode"),
-              value:"https://joelcordeiro98.github.io/quiz-lixo-eletronico/",
+              value:"https://joelcordeiro98.github.io/quiz-lixo-eletronico./",
               size:180});
   fadeIn(document.getElementById("start-screen"));
+  
+  // Carrega os sons quando a página inicia
+  carregarSons();
 });
 
 document.getElementById("userForm").addEventListener("submit", e=>{
@@ -142,13 +172,19 @@ function resetTimer(){
     timeLeft--;
     document.getElementById("timer").innerText="Tempo: "+timeLeft+"s";
     document.getElementById("timer-fill").style.width=(timeLeft*5)+"%";
-    if(timeLeft<=3 && timeLeft>0) soundTick.play();
+    if(timeLeft<=3 && timeLeft>0) {
+        soundTick.currentTime = 0;
+        soundTick.play().catch(e => console.log("Erro ao tocar tick:", e));
+    }
     if(timeLeft<=0){ clearInterval(timer); markAnswer(null); }
   },1000);
 }
 
 function checkAnswer(index){
-  soundClick.play(); clearInterval(timer); markAnswer(index);
+  soundClick.currentTime = 0;
+  soundClick.play().catch(e => console.log("Erro ao tocar clique:", e));
+  clearInterval(timer); 
+  markAnswer(index);
 }
 
 function markAnswer(index){
@@ -159,8 +195,16 @@ function markAnswer(index){
     if(index!==null && i===index && i!==q.c) opt.classList.add("wrong");
     opt.style.pointerEvents="none";
   });
-  if(index===q.c) soundCorrect.play(), correct++;
-  else if(index!==null) soundWrong.play();
+  
+  if(index===q.c) {
+      soundCorrect.currentTime = 0;
+      soundCorrect.play().catch(e => console.log("Erro ao tocar correto:", e));
+      correct++;
+  }
+  else if(index!==null) {
+      soundWrong.currentTime = 0;
+      soundWrong.play().catch(e => console.log("Erro ao tocar errado:", e));
+  }
   setTimeout(nextQuestion,1200);
 }
 
@@ -173,17 +217,74 @@ function nextQuestion(){
   });
 }
 
+// 📊 FUNÇÃO PARA SALVAR NO GOOGLE SHEETS
+async function salvarResultadoGoogleSheets(dados) {
+    try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dados)
+        });
+        
+        const result = await response.json();
+        console.log('Dados salvos com sucesso:', result);
+        return result;
+    } catch (error) {
+        console.error('Erro ao salvar dados:', error);
+        return {success: false, error: error.toString()};
+    }
+}
+
 function finishQuiz(){
-  document.getElementById("quiz-screen").style.display="none";
-  document.getElementById("result-screen").style.display="block";
+  document.getElementById("quiz-screen").style.display = "none";
+  document.getElementById("result-screen").style.display = "block";
   fadeIn(document.getElementById("result-screen"));
-  const percent=((correct/quizData.length)*100).toFixed(1);
-  document.getElementById("result").innerText=`Você acertou ${correct} de ${quizData.length} questões (${percent}%).`;
+  
+  const percent = ((correct / quizData.length) * 100).toFixed(1);
+  document.getElementById("result").innerText = `Você acertou ${correct} de ${quizData.length} questões (${percent}%).`;
+  
+  // Coleta dados para enviar ao Google Sheets
+  const nome = document.getElementById("nome").value;
+  const idade = document.getElementById("idade").value;
+  
+  const dadosQuiz = {
+      nome: nome,
+      idade: parseInt(idade),
+      pontuacao: correct,
+      totalQuestoes: quizData.length,
+      percentual: percent,
+      tempoRestante: timeLeft,
+      timestamp: new Date().toISOString()
+  };
+  
+  // Mostra mensagem de carregamento
+  const loadingMessage = document.getElementById("loading-message");
+  const successMessage = document.getElementById("success-message");
+  loadingMessage.style.display = "block";
+  
+  // Envia para o Google Sheets
+  salvarResultadoGoogleSheets(dadosQuiz)
+      .then(result => {
+          loadingMessage.style.display = "none";
+          if (result.success) {
+              successMessage.style.display = "block";
+              console.log("✅ Dados salvos com sucesso!");
+          } else {
+              console.log("⚠️ Dados não foram salvos, mas o quiz continua.");
+          }
+      })
+      .catch(error => {
+          loadingMessage.style.display = "none";
+          console.log("⚠️ Erro ao salvar, mas o quiz foi finalizado.");
+      });
 }
 
 document.getElementById("restartBtn").addEventListener("click", ()=>{
   current=0; correct=0;
   document.getElementById("result-screen").style.display="none";
+  document.getElementById("success-message").style.display="none";
   document.getElementById("quiz-screen").style.display="block";
   fadeIn(document.getElementById("quiz-screen"));
   showQuestion();
