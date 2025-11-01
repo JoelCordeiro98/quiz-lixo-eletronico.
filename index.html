@@ -66,7 +66,6 @@
 <div class="wrap">
   <div class="card" id="startCard">
     <div class="header">
-      <!-- Usando a URL que você enviou -->
       <img id="unina-logo" class="logo" alt="UNINASSAU Logo"
         src="https://www.globalbox.com.br/wp-content/uploads/2023/01/CENTRO-UNIVERSITARIO-UNIVERITAS-300x285.png">
       <div class="title-block">
@@ -88,7 +87,7 @@
         <label><b>Idade</b></label>
         <input id="idade" type="number" required placeholder="Sua idade">
         <div style="text-align:center">
-          <button class="btn" type="submit">Começar Quiz</button>
+          <button class="btn" type="submit" id="startBtn">Começar Quiz</button>
         </div>
       </form>
     </div>
@@ -115,24 +114,18 @@
   </div>
 </div>
 
-<!-- Áudios (usei seus links do mixkit como antes; se quiser trocar por base64 depois, me diz) -->
-<audio id="sndCorrect" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3"></audio>
-<audio id="sndWrong" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-warning-alarm-buzzer-2851.mp3"></audio>
-<audio id="sndClick" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3"></audio>
-<audio id="sndTick" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-game-interface-407.mp3"></audio>
-
 <script>
 /* CONFIG */
 const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdWJgVrAEma22gZ_y1qmWvbTO2TojFuwqiLH7aWI6cTExbd3dyYpVFY1mRzvH9rwHWJg/exec";
 const GITHUB_PAGES_LINK = "https://joelcordeiro98.github.io/quiz-lixo-eletronico./"; 
 
-/* QUIZ DATA (mantive suas perguntas) */
+/* QUIZ DATA */
 const quizData = [
   {q:"O que é considerado lixo eletrônico (e-lixo)?", a:["Apenas pilhas e baterias","Qualquer tipo de lixo produzido em casa","Equipamentos eletrônicos e elétricos que se tornaram obsoletos ou quebrados","Apenas celulares e computadores"], c:2},
   {q:"Qual é o principal risco do descarte incorreto do lixo eletrônico?", a:["Aumentar o consumo de energia elétrica","Contaminação do solo, da água e do ar","Reduzir a produção de novos produtos","Dificultar o transporte de resíduos"], c:1},
   {q:"Quais substâncias perigosas podem estar presentes no e-lixo?", a:["Cálcio, Ferro e Zinco","Alumínio, Ouro e Prata","Chumbo, Mercúrio e Cádmio","Cobre, Lítio e Carbono"], c:2},
   {q:"Qual é a consequência da perda de materiais valiosos no descarte incorreto?", a:["Aumento do desemprego","Desperdício de recursos que poderiam ser reciclados","Maior produção de lixo doméstico","Diminuição da coleta seletiva"], c:1},
-  {q:"O que representam os 3 R’s da sustentabilidade?", a:["Reutilizar, Recarregar e Reparar","Reduzir, Reutilizar e Reciclar","Recolher, Recuperar e Reaproveitar","Reestruturar, Redefinir e Reaplicar"], c:1},
+  {q:"O que representam os 3 R's da sustentabilidade?", a:["Reutilizar, Recarregar e Reparar","Reduzir, Reutilizar e Reciclar","Recolher, Recuperar e Reaproveitar","Reestruturar, Redefinir e Reaplicar"], c:1},
   {q:"O que a 'logística reversa' determina por lei?", a:["Que apenas consumidores sejam responsáveis pelo descarte","Que as empresas devem receber de volta produtos usados para descarte correto","Que o lixo eletrônico seja misturado ao lixo comum","Que os pontos de coleta sejam criados apenas em escolas"], c:1},
   {q:"O que deve ser feito antes de descartar um celular ou computador?", a:["Quebrar o aparelho para evitar reutilização","Guardar as peças úteis","Apagar todos os dados pessoais e fazer backup","Jogar apenas a bateria no lixo comum"], c:2},
   {q:"Qual é uma função da Inteligência Artificial no processo de reciclagem?", a:["Aumentar o tempo de decomposição dos materiais","Separar materiais de forma automática e precisa","Substituir os pontos de coleta por aplicativos","Reduzir a produção de lixo eletrônico"], c:1},
@@ -142,10 +135,64 @@ const quizData = [
 
 /* ESTADO */
 let current = 0, correct = 0, timerId = null, timeLeft = 20;
-const sndCorrect = document.getElementById('sndCorrect');
-const sndWrong = document.getElementById('sndWrong');
-const sndClick = document.getElementById('sndClick');
-const sndTick = document.getElementById('sndTick');
+let audioContext = null;
+let audioUnlocked = false;
+
+/* SISTEMA DE ÁUDIO */
+function initAudio() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playSound(frequency, duration, type) {
+  if (!audioContext || !audioUnlocked) return;
+  
+  try {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + duration);
+  } catch (error) {
+    console.log('Áudio não disponível:', error);
+  }
+}
+
+function playCorrectSound() {
+  playSound(800, 0.3, 'sine');
+}
+
+function playWrongSound() {
+  playSound(400, 0.3, 'sine');
+}
+
+function playClickSound() {
+  playSound(600, 0.1, 'square');
+}
+
+function playTickSound() {
+  playSound(300, 0.05, 'square');
+}
+
+function unlockAudio() {
+  if (!audioUnlocked && audioContext) {
+    audioContext.resume().then(() => {
+      audioUnlocked = true;
+      console.log('Áudio desbloqueado!');
+      playSound(200, 0.1, 'sine');
+    });
+  }
+}
 
 /* UI HELPERS */
 function show(el){ el.style.display='block'; setTimeout(()=>el.classList.add('show'),20); }
@@ -155,12 +202,11 @@ function hide(el){ el.classList.remove('show'); setTimeout(()=>el.style.display=
 document.addEventListener('DOMContentLoaded', ()=>{
   new QRious({ element: document.getElementById('qrcode'), value: GITHUB_PAGES_LINK, size:160 });
   show(document.getElementById('startCard'));
-  // preload sounds & set volumes (suaves)
-  [sndCorrect,sndWrong,sndClick,sndTick].forEach(s=>{ s.volume = 0.35; s.load(); });
-  sndTick.volume = 0.22; sndClick.volume = 0.28; sndCorrect.volume = 0.45; sndWrong.volume = 0.4;
+  initAudio();
+  document.getElementById('startBtn').addEventListener('click', unlockAudio);
 });
 
-/* BACKGROUND ANIM (igual ao anterior) */
+/* BACKGROUND ANIM */
 (function bgAnim(){
   const c = document.getElementById('bg');
   const ctx = c.getContext('2d');
@@ -206,6 +252,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
 /* QUIZ FLOW */
 document.getElementById('userForm').addEventListener('submit', e=>{
   e.preventDefault();
+  unlockAudio();
   current = 0; correct = 0;
   hide(document.getElementById('startCard'));
   document.getElementById('quizCard').style.display = 'block';
@@ -214,7 +261,6 @@ document.getElementById('userForm').addEventListener('submit', e=>{
 });
 
 function showQuestion(){
-  // garantir que timeLeft reinicia antes de atualizar UI
   timeLeft = 20;
   updateTimerUI();
   clearInterval(timerId);
@@ -226,16 +272,17 @@ function showQuestion(){
 
   const opts = box.querySelectorAll('.option');
   opts.forEach(o=>{
-    // remove listeners se existir (safety)
     o.replaceWith(o.cloneNode(true));
   });
-  // reselect after clone
+  
   const opts2 = box.querySelectorAll('.option');
   opts2.forEach(o=>{
-    o.addEventListener('click', ()=> { sndClick.currentTime=0; sndClick.play().catch(()=>{}); checkAnswer(parseInt(o.dataset.i)); });
+    o.addEventListener('click', ()=> { 
+      playClickSound();
+      checkAnswer(parseInt(o.dataset.i)); 
+    });
   });
 
-  // iniciar timer
   resetTimer();
 }
 
@@ -246,8 +293,13 @@ function resetTimer(){
   timerId = setInterval(()=>{
     timeLeft--;
     updateTimerUI();
-    if(timeLeft<=3 && timeLeft>0){ try{ sndTick.currentTime=0; sndTick.play().catch(()=>{}); }catch(e){} }
-    if(timeLeft<=0){ clearInterval(timerId); markAnswer(null); }
+    if(timeLeft<=3 && timeLeft>0){ 
+      playTickSound();
+    }
+    if(timeLeft<=0){ 
+      clearInterval(timerId); 
+      markAnswer(null); 
+    }
   },1000);
 }
 
@@ -269,71 +321,157 @@ function markAnswer(index){
     if(i===q.c) el.classList.add('correct');
     if(index!==null && i===index && i!==q.c) el.classList.add('wrong');
   });
-  if(index===q.c){ try{ sndCorrect.currentTime=0; sndCorrect.play().catch(()=>{});}catch(e){}; correct++; }
-  else if(index!==null){ try{ sndWrong.currentTime=0; sndWrong.play().catch(()=>{});}catch(e){}; }
+  
+  if(index===q.c){ 
+    playCorrectSound();
+    correct++; 
+  }
+  else if(index!==null){ 
+    playWrongSound();
+  }
+  
   setTimeout(()=>{ nextQuestion(); }, 1100);
 }
 
 function nextQuestion(){
   current++;
   if(current < quizData.length){
-    // apenas exibe a próxima pergunta
     showQuestion();
   } else {
     finishQuiz();
   }
 }
 
-/* ENVIAR PARA GOOGLE SHEETS */
-async function enviarResultadosParaSheets(dados){
+/* ENVIAR PARA GOOGLE SHEETS - VERSÃO CORRIGIDA */
+async function enviarResultadosParaSheets(dados) {
   try {
-    const fd = new FormData();
-    fd.append('dados', JSON.stringify(dados));
-    const resp = await fetch(APP_SCRIPT_URL, { method:'POST', body: fd });
-    if(resp.ok){ const txt = await resp.text(); return { success:true, txt }; }
-    return { success:false, error:`HTTP ${resp.status}` };
-  } catch(err){
-    try {
-      const params = new URLSearchParams(dados).toString();
-      await fetch(APP_SCRIPT_URL + '?' + params, { method:'GET', mode:'no-cors' });
-      return { success:true, method:'get-no-cors' };
-    } catch(e){ return { success:false, error: e.message }; }
+    console.log('📤 Dados preparados para envio:', dados);
+    
+    // MÉTODO 1: FormData (mais compatível com Apps Script)
+    const formData = new FormData();
+    formData.append('nome', dados.nome);
+    formData.append('idade', dados.idade.toString());
+    formData.append('acertos', dados.acertos.toString());
+    formData.append('total', dados.total.toString());
+    formData.append('data', dados.data);
+
+    console.log('📝 Enviando via FormData...');
+    
+    const response = await fetch(APP_SCRIPT_URL, {
+      method: 'POST',
+      body: formData
+    });
+
+    console.log('📨 Resposta recebida:', response.status, response.statusText);
+
+    if (response.ok) {
+      const result = await response.text();
+      console.log('✅ Sucesso! Resposta:', result);
+      return { success: true, data: result };
+    } else {
+      console.warn('⚠️ POST falhou, tentando método alternativo...');
+      
+      // MÉTODO 2: URL Parameters como fallback
+      try {
+        const params = new URLSearchParams();
+        params.append('nome', dados.nome);
+        params.append('idade', dados.idade.toString());
+        params.append('acertos', dados.acertos.toString());
+        params.append('total', dados.total.toString());
+        params.append('data', dados.data);
+
+        const urlComParams = APP_SCRIPT_URL + '?' + params.toString();
+        console.log('🔄 Tentando URL com params:', urlComParams);
+
+        const getResponse = await fetch(urlComParams, {
+          method: 'GET',
+          mode: 'no-cors'
+        });
+        
+        console.log('📡 GET enviado (no-cors)');
+        return { success: true, method: 'get-no-cors' };
+      } catch (getError) {
+        console.error('❌ GET também falhou:', getError);
+        return { success: false, error: `POST: ${response.status}, GET: ${getError.message}` };
+      }
+    }
+  } catch (err) {
+    console.error('💥 Erro geral no envio:', err);
+    return { success: false, error: err.message };
   }
 }
 
-async function finishQuiz(){
+async function finishQuiz() {
   hide(document.getElementById('quizCard'));
-  document.getElementById('resultCard').style.display='block';
-  setTimeout(()=>show(document.getElementById('resultCard')),30);
-  const percent = ((correct/quizData.length)*100).toFixed(1);
+  document.getElementById('resultCard').style.display = 'block';
+  setTimeout(() => show(document.getElementById('resultCard')), 30);
+  
+  const percent = ((correct / quizData.length) * 100).toFixed(1);
   document.getElementById('resultText').innerHTML = `Você acertou <strong>${correct}</strong> de ${quizData.length} questões (${percent}%).`;
 
-  const nome = document.getElementById('nome').value || '';
+  const nome = document.getElementById('nome').value.trim();
   const idade = parseInt(document.getElementById('idade').value) || 0;
+
+  // VERIFICAR SE OS DADOS ESTÃO CORRETOS
+  console.log('🔍 DADOS DO QUIZ:');
+  console.log('Nome:', nome);
+  console.log('Idade:', idade);
+  console.log('Acertos:', correct);
+  console.log('Total:', quizData.length);
+  console.log('Porcentagem:', percent + '%');
+
   const payload = {
-    nome, idade, acertos: correct, total: quizData.length, percentual: percent + '%', data: new Date().toLocaleString('pt-BR')
+    nome: nome,
+    idade: idade,
+    acertos: correct,
+    total: quizData.length,
+    data: new Date().toISOString()
   };
 
   const status = document.getElementById('savingStatus');
-  status.innerText = 'Salvando resultado na planilha...';
+  status.innerText = '💾 Conectando com a planilha...';
+  
+  console.log('🚀 INICIANDO ENVIO PARA GOOGLE SHEETS...');
   const res = await enviarResultadosParaSheets(payload);
-  if(res.success){ status.innerText = '✅ Resultado salvo com sucesso.'; }
-  else { status.innerText = '⚠️ Não foi possível salvar agora. Resultado salvo localmente.'; console.error('Erro salvar:', res); }
+  
+  if (res.success) {
+    status.innerText = '✅ Dados salvos com sucesso!';
+    status.style.color = '#00e1a6';
+    console.log('🎉 ENVIO BEM SUCEDIDO!');
+  } else {
+    status.innerText = '⚠️ Erro ao salvar online. Dados guardados localmente.';
+    status.style.color = '#ff6b6b';
+    console.error('❌ FALHA NO ENVIO:', res.error);
+  }
 
-  // fallback local
-  try{
+  // BACKUP LOCAL SEMPRE
+  try {
     const fallback = JSON.parse(localStorage.getItem('quizBackup') || '[]');
-    fallback.push(payload);
+    const backupData = {
+      nome: nome,
+      idade: idade,
+      acertos: correct,
+      total: quizData.length,
+      percentual: percent + '%',
+      data: new Date().toLocaleString('pt-BR'),
+      timestamp: Date.now()
+    };
+    fallback.push(backupData);
     localStorage.setItem('quizBackup', JSON.stringify(fallback));
-  }catch(e){}
+    console.log('💾 Backup local salvo:', backupData);
+  } catch (e) {
+    console.error('❌ Erro no backup local:', e);
+  }
 }
 
 /* REINICIAR */
-document.getElementById('restartBtn').addEventListener('click', ()=>{
-  current = 0; correct = 0; timeLeft = 20;
-  document.getElementById('resultCard').style.display='none';
-  document.getElementById('quizCard').style.display='block';
-  setTimeout(()=>show(document.getElementById('quizCard')),30);
+document.getElementById('restartBtn').addEventListener('click', () => {
+  current = 0;
+  correct = 0;
+  timeLeft = 20;
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('quizCard').style.display = 'block';
+  setTimeout(() => show(document.getElementById('quizCard')), 30);
   showQuestion();
 });
 </script>
