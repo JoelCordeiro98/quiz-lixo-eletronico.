@@ -1,393 +1,340 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>🧠 Quiz: Descarte Consciente do Lixo Eletrônico</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 <style>
-body {
-  font-family: "Segoe UI", Tahoma, sans-serif;
-  background: url('https://cdn.pixabay.com/photo/2018/01/13/21/49/electronic-waste-3085957_1280.jpg') no-repeat center center fixed;
-  background-size: cover;
-  margin:0; padding:0; overflow:hidden;
-}
-.overlay {
-  background-color: rgba(0,0,0,0.5);
-  position: fixed; top:0; left:0; right:0; bottom:0; z-index:0;
-}
-.container {
-  position: relative; z-index:1;
-  max-width: 700px; margin:60px auto;
-  background: rgba(255,255,255,0.9);
-  border-radius: 20px; padding: 30px;
-  box-shadow:0 0 20px rgba(0,0,0,0.3);
-  text-align: center; transition: all 0.5s ease;
-  opacity:0; transform: translateY(20px);
-}
-.fade-in { opacity:1 !important; transform: translateY(0) !important; }
-h1 { color:#2e7d32; }
-button {
-  background:#2e7d32; color:white; border:none;
-  padding:12px 25px; border-radius:8px; font-size:16px; cursor:pointer; transition:0.3s;
-}
-button:hover { background:#1b5e20; }
-#qrcode { margin:15px auto; display:block; }
-input[type="text"], input[type="number"] {
-  width:100%; padding:10px; border-radius:8px;
-  border:1px solid #ccc; margin-bottom:10px; font-size:16px;
-}
-.question-text { font-size:20px; color:#1b5e20; margin-bottom:20px; }
-.option {
-  background: rgba(46,125,50,0.1);
-  border:1px solid #a5d6a7; border-radius:25px;
-  padding:12px 15px; margin:12px 0; cursor:pointer;
-  transition: all 0.3s ease;
-}
-.option:hover { background: rgba(76,175,80,0.2); transform: scale(1.02); }
-.correct { background-color:#c8e6c9 !important; border-color:#2e7d32; }
-.wrong { background-color:#ffcdd2 !important; border-color:#c62828; }
-#timer-bar { width:100%; height:12px; background-color:#a5d6a7; border-radius:6px; overflow:hidden; margin-bottom:10px; }
-#timer-fill { height:100%; background-color:#2e7d32; width:100%; transition: width 1s linear; }
-#result { font-weight:bold; font-size:22px; color:#2e7d32; margin-top:20px; }
-.loading { color: #2e7d32; font-style: italic; }
-.success { color: #2e7d32; font-weight: bold; }
-.error { color: #c62828; font-style: italic; }
+  :root{
+    --bg-1: #071019;
+    --accent: #00e1a6;
+    --accent-2:#00b0ff;
+    --muted: rgba(255,255,255,0.85);
+  }
+  html,body{height:100%;margin:0;font-family:Inter, "Segoe UI", Tahoma, sans-serif;background:#071019; color:var(--muted);}
+  .bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .overlay{position:fixed;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.25),rgba(0,0,0,0.55));z-index:1}
+  .wrap{position:relative;z-index:2;max-width:920px;margin:40px auto;padding:24px;}
+  .card{
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    backdrop-filter: blur(8px);
+    border-radius:16px;
+    padding:26px;
+    color:var(--muted);
+    transition:transform .35s ease,opacity .35s ease;
+    opacity:0; transform: translateY(18px);
+  }
+  .card.show{ opacity:1; transform:translateY(0); }
+  .header { display:flex; align-items:center; gap:16px; justify-content:center; flex-wrap:wrap; }
+  .logo { width:140px; height:auto; border-radius:6px; box-shadow: 0 6px 20px rgba(0,0,0,0.45); background:rgba(255,255,255,0.02); padding:6px; }
+  .title-block {text-align:center;}
+  h1{margin:0;color:var(--accent-2); font-size:22px;}
+  .subtitle{margin-top:6px;color:rgba(255,255,255,0.7);font-size:13px}
+  .project{margin-top:8px;color:var(--accent);font-weight:700}
+  .start-area{max-width:560px;margin:18px auto 0;}
+  input[type=text], input[type=number]{
+    width:100%; padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.06);
+    background:rgba(255,255,255,0.02); color:var(--muted); outline:none; font-size:15px; margin-top:8px;
+  }
+  .btn { display:inline-flex; align-items:center; gap:10px; justify-content:center; padding:12px 18px; border-radius:12px; cursor:pointer; border:0;
+    background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#062022; font-weight:700; font-size:15px; margin-top:12px; }
+  .qr-wrap{margin:12px 0; text-align:center;}
+  .small-note{font-size:13px;color:rgba(255,255,255,0.6); margin-top:8px}
+  .quiz-card { padding:28px; max-width:760px; margin:20px auto; }
+  .timer-bar{width:100%;height:12px;background:rgba(255,255,255,0.06);border-radius:8px; overflow:hidden;}
+  .timer-fill{height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent)); width:100%; transition:width 1s linear;}
+  .question-text{font-size:20px;color:#dffcf0;margin:18px 0}
+  .options{display:flex;flex-direction:column;gap:12px;align-items:stretch;}
+  .option {
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.04); padding:12px 14px; border-radius:14px; color:var(--muted);
+    cursor:pointer; font-size:15px; transition:transform .18s, box-shadow .18s, background .18s;
+  }
+  .option:hover{ transform: translateY(-6px); box-shadow: 0 10px 30px rgba(2,6,23,0.6); }
+  .option.correct{ background: linear-gradient(90deg, rgba(0,210,160,0.12), rgba(0,176,255,0.06)); border-color: rgba(0,210,160,0.6); color:#e8fff6; }
+  .option.wrong{ background: linear-gradient(90deg, rgba(255,120,120,0.07), rgba(255,80,80,0.03)); border-color: rgba(255,80,80,0.45); color:#ffecec; }
+  .result { text-align:center; font-size:18px; color:var(--muted); margin-top:14px }
+  footer.small { margin-top:12px; font-size:12px; color:rgba(255,255,255,0.55); text-align:center }
+  @media (max-width:720px){ .logo{width:120px} .card{margin:18px} }
 </style>
 </head>
 <body>
+<canvas id="bg" class="bg-canvas"></canvas>
 <div class="overlay"></div>
 
-<div class="container" id="start-screen">
-<h1>🧠 Quiz: Descarte Consciente do Lixo Eletrônico</h1>
-<canvas id="qrcode" width="180" height="180"></canvas>
-<p>📱 Escaneie o QR Code para acessar em outro dispositivo!</p>
-<form id="userForm">
-<label><b>Nome:</b></label>
-<input type="text" id="nome" required>
-<label><b>Idade:</b></label>
-<input type="number" id="idade" required>
-<button type="submit">Começar Quiz</button>
-</form>
+<div class="wrap">
+  <div class="card" id="startCard">
+    <div class="header">
+      <!-- Usando a URL que você enviou -->
+      <img id="unina-logo" class="logo" alt="UNINASSAU Logo"
+        src="https://www.globalbox.com.br/wp-content/uploads/2023/01/CENTRO-UNIVERSITARIO-UNIVERITAS-300x285.png">
+      <div class="title-block">
+        <h1>🧠 Quiz: Descarte Consciente do Lixo Eletrônico</h1>
+        <div class="subtitle">Aprenda, participe e promova o descarte responsável</div>
+        <div class="project">Projeto de Extensão Uninassau</div>
+      </div>
+    </div>
+
+    <div class="start-area">
+      <div class="qr-wrap">
+        <canvas id="qrcode" width="160" height="160"></canvas>
+        <div class="small-note">Escaneie para abrir o quiz neste link em outro dispositivo</div>
+      </div>
+
+      <form id="userForm">
+        <label><b>Nome</b></label>
+        <input id="nome" type="text" required placeholder="Seu nome">
+        <label><b>Idade</b></label>
+        <input id="idade" type="number" required placeholder="Sua idade">
+        <div style="text-align:center">
+          <button class="btn" type="submit">Começar Quiz</button>
+        </div>
+      </form>
+    </div>
+    <footer class="small">Tema: IA aplicada ao descarte consciente • Visual: ambiental + tecnológico</footer>
+  </div>
+
+  <div class="card" id="quizCard" style="display:none;">
+    <div class="quiz-card">
+      <div class="timer-bar"><div id="timerFill" class="timer-fill"></div></div>
+      <div id="timerText" style="color:var(--muted); margin-top:8px; text-align:center">Tempo: 20s</div>
+      <div id="questionBox" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none; text-align:center;">
+    <h2 style="color:var(--accent-2)">Resultado Final</h2>
+    <div id="resultText" class="result"></div>
+    <div style="margin-top:14px">
+      <button id="restartBtn" class="btn">Reiniciar Quiz</button>
+    </div>
+    <div style="margin-top:12px">
+      <div id="savingStatus" style="font-size:13px;color:var(--muted)"></div>
+    </div>
+  </div>
 </div>
 
-<div class="container" id="quiz-screen" style="display:none;">
-<div id="timer-bar"><div id="timer-fill"></div></div>
-<div id="timer" style="font-size:18px; color:#1b5e20;">Tempo: 20s</div>
-<div id="question-container"></div>
-</div>
-
-<div class="container" id="result-screen" style="display:none;">
-<h2>Resultado Final</h2>
-<p id="result"></p>
-<p id="loading-message" class="loading" style="display:none;">📊 Salvando resultado na planilha...</p>
-<p id="success-message" class="success" style="display:none;">✅ Dados salvos com sucesso!</p>
-<p id="error-message" class="error" style="display:none;">❌ Erro ao salvar dados, mas o quiz foi finalizado</p>
-<button id="restartBtn">Reiniciar Quiz</button>
-</div>
-
-<!-- 🎵 SONS MODERNOS E CURTOS -->
-<audio id="sound-correct" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3"></audio>
-<audio id="sound-wrong" src="https://assets.mixkit.co/sfx/preview/mixkit-warning-alarm-buzzer-2851.mp3"></audio>
-<audio id="sound-click" src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3"></audio>
-<audio id="sound-tick" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-game-interface-407.mp3"></audio>
+<!-- Áudios (usei seus links do mixkit como antes; se quiser trocar por base64 depois, me diz) -->
+<audio id="sndCorrect" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3"></audio>
+<audio id="sndWrong" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-warning-alarm-buzzer-2851.mp3"></audio>
+<audio id="sndClick" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3"></audio>
+<audio id="sndTick" preload="auto" src="https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-game-interface-407.mp3"></audio>
 
 <script>
-const quizData=[
-{q:"O que é considerado lixo eletrônico (e-lixo)?", a:["Apenas pilhas e baterias","Qualquer tipo de lixo produzido em casa","Equipamentos eletrônicos e elétricos que se tornaram obsoletos ou quebrados","Apenas celulares e computadores"], c:2},
-{q:"Qual é o principal risco do descarte incorreto do lixo eletrônico?", a:["Aumentar o consumo de energia elétrica","Contaminação do solo, da água e do ar","Reduzir a produção de novos produtos","Dificultar o transporte de resíduos"], c:1},
-{q:"Quais substâncias perigosas podem estar presentes no e-lixo?", a:["Cálcio, Ferro e Zinco","Alumínio, Ouro e Prata","Chumbo, Mercúrio e Cádmio","Cobre, Lítio e Carbono"], c:2},
-{q:"Qual é a consequência da perda de materiais valiosos no descarte incorreto?", a:["Aumento do desemprego","Desperdício de recursos que poderiam ser reciclados","Maior produção de lixo doméstico","Diminuição da coleta seletiva"], c:1},
-{q:"O que representam os 3 R's da sustentabilidade?", a:["Reutilizar, Recarregar e Reparar","Reduzir, Reutilizar e Reciclar","Recolher, Recuperar e Reaproveitar","Reestruturar, Redefinir e Reaplicar"], c:1},
-{q:"O que a 'logística reversa' determina por lei?", a:["Que apenas consumidores sejam responsáveis pelo descarte","Que as empresas devem receber de volta produtos usados para descarte correto","Que o lixo eletrônico seja misturado ao lixo comum","Que os pontos de coleta sejam criados apenas em escolas"], c:1},
-{q:"O que deve ser feito antes de descartar um celular ou computador?", a:["Quebrar o aparelho para evitar reutilização","Guardar as peças úteis","Apagar todos os dados pessoais e fazer backup","Jogar apenas a bateria no lixo comum"], c:2},
-{q:"Qual é uma função da Inteligência Artificial no processo de reciclagem?", a:["Aumentar o tempo de decomposição dos materiais","Separar materiais de forma automática e precisa","Substituir os pontos de coleta por aplicativos","Reduzir a produção de lixo eletrônico"], c:1},
-{q:"Como a IA ajuda na coleta de lixo eletrônico?", a:["Criando robôs que fazem o descarte","Controlando o peso dos resíduos","Otimizando rotas para reduzir custos e emissões de carbono","Coletando lixo eletrônico apenas em áreas industriais"], c:2},
-{q:"Qual é o grande objetivo da união entre IA e descarte consciente?", a:["Substituir o trabalho humano na coleta","Criar novos tipos de lixo eletrônico","Tornar o processo de reciclagem mais sustentável, eficiente e preciso","Aumentar o consumo de produtos eletrônicos"], c:2}
+/* CONFIG */
+const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwdWJgVrAEma22gZ_y1qmWvbTO2TojFuwqiLH7aWI6cTExbd3dyYpVFY1mRzvH9rwHWJg/exec";
+const GITHUB_PAGES_LINK = "https://joelcordeiro98.github.io/quiz-lixo-eletronico./"; 
+
+/* QUIZ DATA (mantive suas perguntas) */
+const quizData = [
+  {q:"O que é considerado lixo eletrônico (e-lixo)?", a:["Apenas pilhas e baterias","Qualquer tipo de lixo produzido em casa","Equipamentos eletrônicos e elétricos que se tornaram obsoletos ou quebrados","Apenas celulares e computadores"], c:2},
+  {q:"Qual é o principal risco do descarte incorreto do lixo eletrônico?", a:["Aumentar o consumo de energia elétrica","Contaminação do solo, da água e do ar","Reduzir a produção de novos produtos","Dificultar o transporte de resíduos"], c:1},
+  {q:"Quais substâncias perigosas podem estar presentes no e-lixo?", a:["Cálcio, Ferro e Zinco","Alumínio, Ouro e Prata","Chumbo, Mercúrio e Cádmio","Cobre, Lítio e Carbono"], c:2},
+  {q:"Qual é a consequência da perda de materiais valiosos no descarte incorreto?", a:["Aumento do desemprego","Desperdício de recursos que poderiam ser reciclados","Maior produção de lixo doméstico","Diminuição da coleta seletiva"], c:1},
+  {q:"O que representam os 3 R’s da sustentabilidade?", a:["Reutilizar, Recarregar e Reparar","Reduzir, Reutilizar e Reciclar","Recolher, Recuperar e Reaproveitar","Reestruturar, Redefinir e Reaplicar"], c:1},
+  {q:"O que a 'logística reversa' determina por lei?", a:["Que apenas consumidores sejam responsáveis pelo descarte","Que as empresas devem receber de volta produtos usados para descarte correto","Que o lixo eletrônico seja misturado ao lixo comum","Que os pontos de coleta sejam criados apenas em escolas"], c:1},
+  {q:"O que deve ser feito antes de descartar um celular ou computador?", a:["Quebrar o aparelho para evitar reutilização","Guardar as peças úteis","Apagar todos os dados pessoais e fazer backup","Jogar apenas a bateria no lixo comum"], c:2},
+  {q:"Qual é uma função da Inteligência Artificial no processo de reciclagem?", a:["Aumentar o tempo de decomposição dos materiais","Separar materiais de forma automática e precisa","Substituir os pontos de coleta por aplicativos","Reduzir a produção de lixo eletrônico"], c:1},
+  {q:"Como a IA ajuda na coleta de lixo eletrônico?", a:["Criando robôs que fazem o descarte","Controlando o peso dos resíduos","Otimizando rotas para reduzir custos e emissões de carbono","Coletando lixo eletrônico apenas em áreas industriais"], c:2},
+  {q:"Qual é o grande objetivo da união entre IA e descarte consciente?", a:["Substituir o trabalho humano na coleta","Criar novos tipos de lixo eletrônico","Tornar o processo de reciclagem mais sustentável, eficiente e preciso","Aumentar o consumo de produtos eletrônicos"], c:2}
 ];
 
-let current=0, correct=0, timer, timeLeft=20;
-const soundCorrect=document.getElementById("sound-correct");
-const soundWrong=document.getElementById("sound-wrong");
-const soundClick=document.getElementById("sound-click");
-const soundTick=document.getElementById("sound-tick");
+/* ESTADO */
+let current = 0, correct = 0, timerId = null, timeLeft = 20;
+const sndCorrect = document.getElementById('sndCorrect');
+const sndWrong = document.getElementById('sndWrong');
+const sndClick = document.getElementById('sndClick');
+const sndTick = document.getElementById('sndTick');
 
-// 🔗 URL DO GOOGLE APPS SCRIPT
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxxH1bpUOBxEU0r7pQ5WwsnTUtsOu2lkceIapiz50yo6WnxXdMJP8hvQmPW1abFyh9Org/exec';
+/* UI HELPERS */
+function show(el){ el.style.display='block'; setTimeout(()=>el.classList.add('show'),20); }
+function hide(el){ el.classList.remove('show'); setTimeout(()=>el.style.display='none',320); }
 
-// Função para garantir que os sons carreguem
-function carregarSons() {
-    console.log("Carregando sons modernos...");
-    
-    // Pré-carrega os sons
-    soundCorrect.load();
-    soundWrong.load();
-    soundClick.load();
-    soundTick.load();
-    
-    // Configura volume (mais baixo para sons modernos)
-    soundCorrect.volume = 0.4;
-    soundWrong.volume = 0.4;
-    soundClick.volume = 0.3;
-    soundTick.volume = 0.2;
-    
-    console.log("Sons modernos carregados!");
-}
-
-function fadeIn(el){ el.style.display="block"; setTimeout(()=>el.classList.add("fade-in"),50);}
-function fadeOut(el,callback){ el.classList.remove("fade-in"); setTimeout(()=>{el.style.display="none"; if(callback) callback();},500); }
-
-document.addEventListener("DOMContentLoaded",()=>{
-  new QRious({element:document.getElementById("qrcode"),
-              value:"https://joelcordeiro98.github.io/quiz-lixo-eletronico./",
-              size:180});
-  fadeIn(document.getElementById("start-screen"));
-  
-  // Carrega os sons quando a página inicia
-  carregarSons();
+/* INIT */
+document.addEventListener('DOMContentLoaded', ()=>{
+  new QRious({ element: document.getElementById('qrcode'), value: GITHUB_PAGES_LINK, size:160 });
+  show(document.getElementById('startCard'));
+  // preload sounds & set volumes (suaves)
+  [sndCorrect,sndWrong,sndClick,sndTick].forEach(s=>{ s.volume = 0.35; s.load(); });
+  sndTick.volume = 0.22; sndClick.volume = 0.28; sndCorrect.volume = 0.45; sndWrong.volume = 0.4;
 });
 
-document.getElementById("userForm").addEventListener("submit", e=>{
+/* BACKGROUND ANIM (igual ao anterior) */
+(function bgAnim(){
+  const c = document.getElementById('bg');
+  const ctx = c.getContext('2d');
+  let W, H, particles=[];
+  function resize(){ W=c.width=innerWidth; H=c.height=innerHeight; initParticles(); }
+  function initParticles(){
+    particles = [];
+    for(let i=0;i<60;i++){
+      particles.push({x:Math.random()*W, y:Math.random()*H, vx:(Math.random()-0.5)*0.3, vy:(Math.random()-0.5)*0.3, r:1+Math.random()*2, phase:Math.random()*Math.PI*2});
+    }
+  }
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const g=ctx.createLinearGradient(0,0,W,H);
+    g.addColorStop(0,'rgba(0,16,20,0.25)'); g.addColorStop(1,'rgba(2,8,14,0.45)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+    ctx.lineWidth=0.8;
+    for(let p of particles){
+      p.x += p.vx; p.y += p.vy; p.phase += 0.01;
+      if(p.x<0)p.x=W; if(p.x>W)p.x=0; if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(0,225,166,${0.08 + 0.2*Math.sin(p.phase)})`;
+      ctx.arc(p.x,p.y,p.r+1*Math.abs(Math.sin(p.phase)),0,Math.PI*2); ctx.fill();
+    }
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const a=particles[i], b=particles[j];
+        const dx=a.x-b.x, dy=a.y-b.y; const d2=dx*dx+dy*dy;
+        if(d2<90000){
+          ctx.beginPath();
+          const alpha = 0.008*(90000 - d2);
+          ctx.strokeStyle = `rgba(0,176,255,${alpha})`;
+          ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', resize);
+  resize(); draw();
+})();
+
+/* QUIZ FLOW */
+document.getElementById('userForm').addEventListener('submit', e=>{
   e.preventDefault();
-  fadeOut(document.getElementById("start-screen"),()=>{
-    document.getElementById("quiz-screen").style.display="block";
-    fadeIn(document.getElementById("quiz-screen"));
-    showQuestion();
-  });
+  current = 0; correct = 0;
+  hide(document.getElementById('startCard'));
+  document.getElementById('quizCard').style.display = 'block';
+  setTimeout(()=>show(document.getElementById('quizCard')),50);
+  showQuestion();
 });
 
 function showQuestion(){
-  const q=quizData[current];
-  const container=document.getElementById("question-container");
-  container.innerHTML=`<div class='question-text'><b>${current+1}. ${q.q}</b></div>`+
-    q.a.map((opt,i)=>`<div class='option' onclick='checkAnswer(${i})'>${opt}</div>`).join("");
-  fadeIn(container);
+  // garantir que timeLeft reinicia antes de atualizar UI
+  timeLeft = 20;
+  updateTimerUI();
+  clearInterval(timerId);
+
+  const q = quizData[current];
+  const box = document.getElementById('questionBox');
+  box.innerHTML = `<div class="question-text"><b>${current+1}. ${q.q}</b></div>
+    <div class="options">${q.a.map((opt,i)=>`<div class="option" data-i="${i}">${opt}</div>`).join('')}</div>`;
+
+  const opts = box.querySelectorAll('.option');
+  opts.forEach(o=>{
+    // remove listeners se existir (safety)
+    o.replaceWith(o.cloneNode(true));
+  });
+  // reselect after clone
+  const opts2 = box.querySelectorAll('.option');
+  opts2.forEach(o=>{
+    o.addEventListener('click', ()=> { sndClick.currentTime=0; sndClick.play().catch(()=>{}); checkAnswer(parseInt(o.dataset.i)); });
+  });
+
+  // iniciar timer
   resetTimer();
 }
 
 function resetTimer(){
-  clearInterval(timer);
-  timeLeft=20;
-  document.getElementById("timer").innerText="Tempo: 20s";
-  document.getElementById("timer-fill").style.width="100%";
-  timer=setInterval(()=>{
+  clearInterval(timerId);
+  timeLeft = 20;
+  updateTimerUI();
+  timerId = setInterval(()=>{
     timeLeft--;
-    document.getElementById("timer").innerText="Tempo: "+timeLeft+"s";
-    document.getElementById("timer-fill").style.width=(timeLeft*5)+"%";
-    if(timeLeft<=3 && timeLeft>0) {
-        soundTick.currentTime = 0;
-        soundTick.play().catch(e => console.log("Erro ao tocar tick:", e));
-    }
-    if(timeLeft<=0){ clearInterval(timer); markAnswer(null); }
+    updateTimerUI();
+    if(timeLeft<=3 && timeLeft>0){ try{ sndTick.currentTime=0; sndTick.play().catch(()=>{}); }catch(e){} }
+    if(timeLeft<=0){ clearInterval(timerId); markAnswer(null); }
   },1000);
 }
 
+function updateTimerUI(){
+  document.getElementById('timerText').innerText = `Tempo: ${timeLeft}s`;
+  document.getElementById('timerFill').style.width = Math.max(0,(timeLeft/20)*100) + '%';
+}
+
 function checkAnswer(index){
-  soundClick.currentTime = 0;
-  soundClick.play().catch(e => console.log("Erro ao tocar clique:", e));
-  clearInterval(timer); 
+  clearInterval(timerId);
   markAnswer(index);
 }
 
 function markAnswer(index){
-  const q=quizData[current];
-  const options=document.querySelectorAll(".option");
-  options.forEach((opt,i)=>{
-    if(i===q.c) opt.classList.add("correct");
-    if(index!==null && i===index && i!==q.c) opt.classList.add("wrong");
-    opt.style.pointerEvents="none";
+  const q = quizData[current];
+  const opts = document.querySelectorAll('.option');
+  opts.forEach((el,i)=>{
+    el.style.pointerEvents='none';
+    if(i===q.c) el.classList.add('correct');
+    if(index!==null && i===index && i!==q.c) el.classList.add('wrong');
   });
-  
-  if(index===q.c) {
-      soundCorrect.currentTime = 0;
-      soundCorrect.play().catch(e => console.log("Erro ao tocar correto:", e));
-      correct++;
-  }
-  else if(index!==null) {
-      soundWrong.currentTime = 0;
-      soundWrong.play().catch(e => console.log("Erro ao tocar errado:", e));
-  }
-  setTimeout(nextQuestion,1200);
+  if(index===q.c){ try{ sndCorrect.currentTime=0; sndCorrect.play().catch(()=>{});}catch(e){}; correct++; }
+  else if(index!==null){ try{ sndWrong.currentTime=0; sndWrong.play().catch(()=>{});}catch(e){}; }
+  setTimeout(()=>{ nextQuestion(); }, 1100);
 }
 
 function nextQuestion(){
-  fadeOut(document.getElementById("quiz-screen"),()=>{
-    current++;
-    if(current<quizData.length) showQuestion();
-    else finishQuiz();
-    if(current<quizData.length) fadeIn(document.getElementById("quiz-screen"));
-  });
+  current++;
+  if(current < quizData.length){
+    // apenas exibe a próxima pergunta
+    showQuestion();
+  } else {
+    finishQuiz();
+  }
 }
 
-// 📊 FUNÇÃO REVISADA PARA SALVAR NO GOOGLE SHEETS
-async function salvarResultadoGoogleSheets(dados) {
+/* ENVIAR PARA GOOGLE SHEETS */
+async function enviarResultadosParaSheets(dados){
+  try {
+    const fd = new FormData();
+    fd.append('dados', JSON.stringify(dados));
+    const resp = await fetch(APP_SCRIPT_URL, { method:'POST', body: fd });
+    if(resp.ok){ const txt = await resp.text(); return { success:true, txt }; }
+    return { success:false, error:`HTTP ${resp.status}` };
+  } catch(err){
     try {
-        console.log('📤 Enviando dados para o Google Sheets:', dados);
-        
-        // Formata os dados de forma mais simples
-        const dadosFormatados = {
-            nome: dados.nome || '',
-            idade: dados.idade || 0,
-            pontuacao: dados.pontuacao || 0,
-            totalQuestoes: dados.totalQuestoes || 0,
-            percentual: dados.percentual || '0%',
-            tempoRestante: dados.tempoRestante || 0,
-            data: new Date().toLocaleString('pt-BR')
-        };
-        
-        console.log('📝 Dados formatados:', dadosFormatados);
-        
-        // Usando FormData para evitar problemas de CORS
-        const formData = new FormData();
-        formData.append('dados', JSON.stringify(dadosFormatados));
-        
-        const response = await fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            body: formData
-        });
-        
-        console.log('📨 Resposta do servidor:', response);
-        
-        if (!response.ok) {
-            throw new Error(`Erro HTTP: ${response.status}`);
-        }
-        
-        const result = await response.text();
-        console.log('✅ Resposta do Google Sheets:', result);
-        
-        return {success: true, data: result};
-        
-    } catch (error) {
-        console.error('❌ Erro ao salvar dados:', error);
-        return {success: false, error: error.message};
-    }
+      const params = new URLSearchParams(dados).toString();
+      await fetch(APP_SCRIPT_URL + '?' + params, { method:'GET', mode:'no-cors' });
+      return { success:true, method:'get-no-cors' };
+    } catch(e){ return { success:false, error: e.message }; }
+  }
 }
 
-// 🆕 Função alternativa usando URL parameters
-async function salvarResultadoAlternativo(dados) {
-    try {
-        console.log('🔄 Tentando método alternativo...');
-        
-        const params = new URLSearchParams({
-            nome: dados.nome || '',
-            idade: dados.idade || 0,
-            pontuacao: dados.pontuacao || 0,
-            totalQuestoes: dados.totalQuestoes || 0,
-            percentual: dados.percentual || '0%',
-            tempoRestante: dados.tempoRestante || 0,
-            data: new Date().toLocaleString('pt-BR')
-        });
-        
-        const urlComParams = `${GOOGLE_SCRIPT_URL}?${params.toString()}`;
-        console.log('🔗 URL com parâmetros:', urlComParams);
-        
-        const response = await fetch(urlComParams, {
-            method: 'GET',
-            mode: 'no-cors'
-        });
-        
-        console.log('📨 Resposta do método alternativo:', response);
-        return {success: true, method: 'alternative'};
-        
-    } catch (error) {
-        console.error('❌ Erro no método alternativo:', error);
-        return {success: false, error: error.message};
-    }
-}
+async function finishQuiz(){
+  hide(document.getElementById('quizCard'));
+  document.getElementById('resultCard').style.display='block';
+  setTimeout(()=>show(document.getElementById('resultCard')),30);
+  const percent = ((correct/quizData.length)*100).toFixed(1);
+  document.getElementById('resultText').innerHTML = `Você acertou <strong>${correct}</strong> de ${quizData.length} questões (${percent}%).`;
 
-function finishQuiz(){
-  document.getElementById("quiz-screen").style.display = "none";
-  document.getElementById("result-screen").style.display = "block";
-  fadeIn(document.getElementById("result-screen"));
-  
-  const percent = ((correct / quizData.length) * 100).toFixed(1);
-  document.getElementById("result").innerText = `Você acertou ${correct} de ${quizData.length} questões (${percent}%).`;
-  
-  // Coleta dados para enviar ao Google Sheets
-  const nome = document.getElementById("nome").value;
-  const idade = document.getElementById("idade").value;
-  
-  const dadosQuiz = {
-      nome: nome,
-      idade: parseInt(idade),
-      pontuacao: correct,
-      totalQuestoes: quizData.length,
-      percentual: percent + '%',
-      tempoRestante: timeLeft,
-      timestamp: new Date().toISOString()
+  const nome = document.getElementById('nome').value || '';
+  const idade = parseInt(document.getElementById('idade').value) || 0;
+  const payload = {
+    nome, idade, acertos: correct, total: quizData.length, percentual: percent + '%', data: new Date().toLocaleString('pt-BR')
   };
-  
-  // Mostra mensagem de carregamento
-  const loadingMessage = document.getElementById("loading-message");
-  const successMessage = document.getElementById("success-message");
-  const errorMessage = document.getElementById("error-message");
-  
-  loadingMessage.style.display = "block";
-  successMessage.style.display = "none";
-  errorMessage.style.display = "none";
-  
-  // Tenta salvar no Google Sheets
-  salvarResultadoGoogleSheets(dadosQuiz)
-      .then(result => {
-          loadingMessage.style.display = "none";
-          if (result.success) {
-              successMessage.style.display = "block";
-              console.log("✅ Dados salvos com sucesso!");
-          } else {
-              console.log("🔄 Tentando método alternativo...");
-              // Se o primeiro método falhar, tenta o alternativo
-              return salvarResultadoAlternativo(dadosQuiz);
-          }
-      })
-      .then(altResult => {
-          if (altResult) {
-              loadingMessage.style.display = "none";
-              if (altResult.success) {
-                  successMessage.style.display = "block";
-                  console.log("✅ Dados salvos com método alternativo!");
-              } else {
-                  errorMessage.style.display = "block";
-                  console.log("❌ Ambos os métodos falharam:", altResult.error);
-              }
-          }
-      })
-      .catch(error => {
-          loadingMessage.style.display = "none";
-          errorMessage.style.display = "block";
-          console.log("❌ Erro geral ao salvar:", error);
-      });
+
+  const status = document.getElementById('savingStatus');
+  status.innerText = 'Salvando resultado na planilha...';
+  const res = await enviarResultadosParaSheets(payload);
+  if(res.success){ status.innerText = '✅ Resultado salvo com sucesso.'; }
+  else { status.innerText = '⚠️ Não foi possível salvar agora. Resultado salvo localmente.'; console.error('Erro salvar:', res); }
+
+  // fallback local
+  try{
+    const fallback = JSON.parse(localStorage.getItem('quizBackup') || '[]');
+    fallback.push(payload);
+    localStorage.setItem('quizBackup', JSON.stringify(fallback));
+  }catch(e){}
 }
 
-document.getElementById("restartBtn").addEventListener("click", ()=>{
-  current=0; correct=0;
-  document.getElementById("result-screen").style.display="none";
-  document.getElementById("success-message").style.display="none";
-  document.getElementById("error-message").style.display="none";
-  document.getElementById("quiz-screen").style.display="block";
-  fadeIn(document.getElementById("quiz-screen"));
+/* REINICIAR */
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  current = 0; correct = 0; timeLeft = 20;
+  document.getElementById('resultCard').style.display='none';
+  document.getElementById('quizCard').style.display='block';
+  setTimeout(()=>show(document.getElementById('quizCard')),30);
   showQuestion();
-});
-
-// 🆕 Teste da conexão com o Google Apps Script
-function testarConexao() {
-    console.log('🧪 Testando conexão com Google Apps Script...');
-    fetch(GOOGLE_SCRIPT_URL)
-        .then(response => {
-            console.log('🔗 Status da conexão:', response.status);
-            console.log('🔗 Response:', response);
-            return response.text();
-        })
-        .then(text => {
-            console.log('🔗 Conteúdo da resposta:', text);
-        })
-        .catch(error => {
-            console.error('🔗 Erro na conexão:', error);
-        });
-}
-
-// Testa a conexão quando a página carrega
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(testarConexao, 2000);
 });
 </script>
 </body>
